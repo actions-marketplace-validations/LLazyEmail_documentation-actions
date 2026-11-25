@@ -16,6 +16,54 @@ Arthur answered all five questions in #181 on 2026-11-23 (Europe/Kiev):
 5. **Umbrella per-domain workflows: later, as opt-in extras only.** They never replace
    the existing names.
 
+### Progress
+
+- 2026-11-23, decision 2: per-release pinning merged (#187). It's opt-in until the
+  `RELEASE_PIN_TOKEN` secret exists.
+- 2026-11-23, decision 1, step 1: `workflows.manifest.yml` and
+  `scripts/gen-workflows.py`.
+  - **Generated (13):** all short-name alias files. Each is semantically identical to
+    the hand-written version: the same inputs, defaults, types, secrets, permissions,
+    job ids and `with:` values. The text differs only in a "generated" comment
+    line, input descriptions the old copies had dropped, and the order of `with:` keys.
+  - **Checked, not generated (22):** every other reusable workflow. The checks cover
+    job ids, check names, permissions, secrets, the actions it calls (and that every
+    input passed to them exists), unused inputs, and `@main` own refs.
+  - **Why the 22 aren't generated yet:** their job bodies are all different
+    (checkout options, `if:`, concurrency, value conversions like `&& 'true' || 'false'`).
+    Renovate also updates the third-party SHA pins inside them, and it would have to
+    update a manifest instead, which it can't. Next step: generate their
+    `workflow_call` inputs from the action's `action.yml` plus per-input type
+    overrides, leaving the steps hand-written.
+  - **Known quirk, found by the generator check:** `reusable-docusaurus-test-deploy` and
+    `reusable-test-deploy` accepted `fetch-depth` but didn't pass it on. Fixed in the
+    follow-up PR: `reusable-docs-ci` now has an opt-in `fetch-depth` input (default `0`,
+    the previous fixed value), and test-deploy forwards it.
+
+- Decision 1, step 2: the generator now writes the `workflow_call.inputs` block of
+  9 single-action wrappers from their `action.yml`. These are auto-rebase-prs,
+  awesome-list-checks, close-superseded-prs, docusaurus-pages-deploy, link-check,
+  markdownlint, npm-script-check, star-request and sync-feedback.
+  - The rule: `<name>: <type>` takes the action's description, required and default.
+    `keep` keeps a workflow-only input. Every action input must be exposed or listed
+    in `not-exposed:`.
+  - This is semantically identical for callers: the same names, order, types,
+    defaults and required flags. Only the descriptions now use the action's wording.
+  - Still hand-written: steps and `with:` lines, the git-push-retry helpers
+    (catalog-api, changelog, docs-index, whose inputs mean something different from the
+    action's), docs-ci (5 actions), build-image-check and thin-content-check (2 actions
+    each), the composite and suite workflows, and the 5 inline-logic workflows.
+- Decision 1, step 3: the same 9 wrappers now also get the action step's `with:`
+  lines generated, one `<name>: ${{ inputs.<name> }}` per typed input, between
+  `# generated:` / `# end generated` comments. Hand-written lines stay below the block
+  and win for their key: the boolean conversions in link-check, `github-token` in
+  auto-rebase, `package-manager-cache: npm` in pages-deploy. All 9 files parse to the
+  same YAML as before; only comments and key order changed. A new action input now
+  takes one manifest line plus a regenerate.
+- Decision 1, step 4: the alias tables in `docs/naming.md` and `docs/deprecation.md` are
+  generated from the manifest, between `<!-- generated: … -->` markers. The rows are
+  byte-identical to the hand-written tables.
+
 The text below is the original proposal, kept as written.
 
 Original status: **proposal**. This page changes no code and no caller. It records how the

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.3] - 2026-11-24
+
+### Changed
+
+- Docs: the alias tables in `docs/naming.md` and `docs/deprecation.md` are now generated from `workflows.manifest.yml` by `scripts/gen-workflows.py`, between `<!-- generated: … -->` markers. CI fails when they drift. The table rows didn't change.
+
+## [2.15.2] - 2026-11-24
+
+### Changed
+
+- Maintainers: `scripts/gen-workflows.py` now also writes the pass-through `with:` lines (`<name>: ${{ inputs.<name> }}`) of the action step in the 9 generated wrappers, between `# generated:` / `# end generated` comments. Hand-written lines, such as value conversions and tokens, stay below the block and win for their key. Exposing a new action input is now one manifest line plus `python3 scripts/gen-workflows.py`. Callers see no change: every changed workflow parses to the same YAML as before.
+
+## [2.15.1] - 2026-11-24
+
+### Changed
+
+- Maintainers: `scripts/gen-workflows.py` now also generates the `workflow_call.inputs` block of 9 single-action wrappers (auto-rebase-prs, awesome-list-checks, close-superseded-prs, docusaurus-pages-deploy, link-check, markdownlint, npm-script-check, star-request, sync-feedback) from the action's `action.yml`. CI fails when an action gains an input that the manifest neither exposes nor lists under `not-exposed:`. Callers see no change: input names, order, types, defaults and required flags are identical. Only input descriptions now match the action's wording.
+
+## [2.15.0] - 2026-11-24
+
+### Added
+
+- `reusable-docs-ci`: new opt-in `fetch-depth` input for the build and npm-check checkouts. The default `0` (full history) is the value these jobs always used, so nothing changes unless you set it. `reusable-docusaurus-test-deploy` and its alias `reusable-test-deploy` already accepted `fetch-depth` but ignored it. They now pass it on, so `fetch-depth: 1` really gives a shallow build checkout. Keep `0` if the site shows git-based "last updated" data. The markdownlint and lychee checkouts are unchanged (shallow).
+
+## [2.14.1] - 2026-11-24
+
+### Changed
+
+- Maintainers: the 13 short-name alias workflows are now generated from the new `workflows.manifest.yml` by `scripts/gen-workflows.py` (DA #181, option a, step 1). Each alias copies its long name's `workflow_call` block and forwards every input, so a new input is declared once, on the long workflow. The generated files are semantically identical to the hand-written ones: same inputs, defaults, secrets, permissions, job ids and check names. Callers need no change. The other 22 reusable workflows are listed in the manifest and checked in CI: job ids, check names, permissions, secrets, action inputs, unused inputs, and own refs on `@main` so `scripts/pin-release-refs.sh` can pin them. New `tests/gen-workflows.test.sh`.
+
 ## [2.14.0] - 2026-11-23
 
 ### Added
@@ -472,6 +502,11 @@ auto-rebase: conflicts are now reported with their type (`deleted-on-main`, `del
 - Reusable JSON API regenerate workflow (`reusable-catalog-api`).
 - Awesome-list checks: entry-format, duplicates, sorted-sections (`actions/awesome-list-checks`).
 
+[2.15.3]: https://github.com/LLazyEmail/documentation-actions/compare/v2.15.2...v2.15.3
+[2.15.2]: https://github.com/LLazyEmail/documentation-actions/compare/v2.15.1...v2.15.2
+[2.15.1]: https://github.com/LLazyEmail/documentation-actions/compare/v2.15.0...v2.15.1
+[2.15.0]: https://github.com/LLazyEmail/documentation-actions/compare/v2.14.1...v2.15.0
+[2.14.1]: https://github.com/LLazyEmail/documentation-actions/compare/v2.14.0...v2.14.1
 [2.14.0]: https://github.com/LLazyEmail/documentation-actions/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/LLazyEmail/documentation-actions/compare/v2.12.0...v2.13.0
 [2.12.0]: https://github.com/LLazyEmail/documentation-actions/compare/v2.11.0...v2.12.0
